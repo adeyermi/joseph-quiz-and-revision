@@ -15,15 +15,30 @@ const UserEntryPage = () => {
     if (!name.trim() || !gender) return;
 
     setIsSubmitting(true);
-    
-    // Simulate admin email notification
-    console.log(`Joseph Group notification: ${gender === 'male' ? 'Brother' : 'Sister'} ${name} has started revision.`);
-    
-    setUser({ name: name.trim(), gender: gender as 'male' | 'female' });
-    
-    setTimeout(() => {
-      navigate('/home');
-    }, 1000);
+
+    try {
+      const response = await fetch('https://server-wizg.onrender.com/api/notify-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), gender }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Something went wrong');
+
+      // Set user in context
+      setUser({ name: name.trim(), gender: gender as 'male' | 'female' });
+
+      // Navigate after slight delay
+      setTimeout(() => {
+        navigate('/home');
+      }, 1000);
+    } catch (error) {
+      console.error('Failed to notify admin:', error);
+      alert('Failed to notify admin. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

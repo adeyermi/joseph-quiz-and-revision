@@ -19,7 +19,7 @@ const HomePage = () => {
             Welcome {getGreeting()}! 🙏
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Ready to dive deeper into your revision journey? Choose your path below and strengthen your knowledge with God's guidance.
+            Ready to dive deeper into revision app? Choose your path below and strengthen your knowledge with God's guidance.
           </p>
         </div>
 

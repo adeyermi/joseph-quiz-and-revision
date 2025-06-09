@@ -10,6 +10,8 @@ const MemoryVerseQuiz = () => {
   const [selectedVersion, setSelectedVersion] = useState<'KJV' | 'NIV' | null>(null);
   const [currentVerse, setCurrentVerse] = useState<any>(null);
   const [showThankYou, setShowThankYou] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const verses = {
     KJV: [
@@ -56,17 +58,39 @@ const MemoryVerseQuiz = () => {
     setCurrentVerse(randomVerse);
   };
 
-  const handleSubmit = (audioBlob: Blob) => {
-    // Simulate sending email to admin
-    console.log(`Sending memory verse recording to Joseph Group from ${getGreeting()}`);
-    console.log('Recording blob size:', audioBlob.size);
-    setShowThankYou(true);
+  const handleSubmit = async (audioBlob: Blob) => {
+    setUploading(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+          formData.append('audio', audioBlob, 'memory-verse.webm');
+          formData.append('name', getGreeting()); 
+          formData.append('gender', getGreeting().includes('Brother') ? 'male' : 'female');
+          formData.append('quizType', 'Memory Verse');
+
+
+      const response = await fetch('https://server-wizg.onrender.com/api/upload-recording', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload audio. Please try again.');
+      }
+
+      setShowThankYou(true);
+    } catch (err: any) {
+      setError(err.message || 'An error occurred.');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const retry = () => {
     setCurrentVerse(null);
     setSelectedVersion(null);
     setShowThankYou(false);
+    setError(null);
   };
 
   if (showThankYou) {
@@ -103,7 +127,6 @@ const MemoryVerseQuiz = () => {
   return (
     <div className="min-h-screen p-6 bg-cream">
       <div className="max-w-4xl mx-auto">
-        {/* Back Button */}
         <button
           onClick={() => navigate('/quiz')}
           className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 mb-8 transition-colors duration-200"
@@ -112,7 +135,6 @@ const MemoryVerseQuiz = () => {
           <span>Back to Quiz Menu</span>
         </button>
 
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="bg-cream rounded-full p-6 w-20 h-20 mx-auto mb-6 flex items-center justify-center border-2 border-orange-primary">
             <BookOpen className="w-10 h-10 text-orange-primary" />
@@ -123,8 +145,13 @@ const MemoryVerseQuiz = () => {
           </p>
         </div>
 
+        {error && (
+          <div className="bg-red-100 text-red-700 p-4 mb-6 rounded-lg border border-red-300">
+            {error}
+          </div>
+        )}
+
         {!selectedVersion ? (
-          /* Version Selection */
           <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
             <button
               onClick={() => selectVersion('KJV')}
@@ -147,9 +174,7 @@ const MemoryVerseQuiz = () => {
             </button>
           </div>
         ) : (
-          /* Quiz Interface */
           <div className="space-y-8">
-            {/* Verse Display */}
             <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-2xl p-8 border border-orange-200">
               <h3 className="text-xl font-bold text-orange-800 mb-4">{currentVerse.reference} ({selectedVersion})</h3>
               <p className="text-gray-700 text-lg leading-relaxed mb-6">
@@ -162,8 +187,7 @@ const MemoryVerseQuiz = () => {
               </div>
             </div>
 
-            {/* Voice Recorder */}
-            <VoiceRecorder onSubmit={handleSubmit} timeLimit={60} />
+            <VoiceRecorder onSubmit={handleSubmit} timeLimit={60} uploading={uploading} />
           </div>
         )}
       </div>
