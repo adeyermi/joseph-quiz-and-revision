@@ -226,6 +226,7 @@ const MemoryVerseQuiz = () => {
               {audioUrl && (
                 <div className="mt-6 text-center">
                   <audio ref={audioRef} controls src={audioUrl} className="mx-auto" />
+                  <p className="mt-2 text-gray-700">Time left: {formatTime(timeLeft)}</p>
                 </div>
               )}
             </div>
