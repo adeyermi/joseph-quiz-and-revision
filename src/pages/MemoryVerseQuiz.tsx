@@ -223,7 +223,11 @@ const MemoryVerseQuiz = () => {
 
               <VoiceRecorder onSubmit={handleSubmit} timeLimit={60} uploading={uploading} />
               {uploading && <LoadingSpinner />}
-    
+              {audioUrl && (
+                <div className="mt-6 text-center">
+                  <audio ref={audioRef} controls src={audioUrl} className="mx-auto" />
+                </div>
+              )}
             </div>
           </div>
         )}
