@@ -66,15 +66,6 @@ const HomePage = () => {
           </div>
         </div>
 
-        {/* Encouragement Section */}
-        <div className="mt-12 bg-gradient-to-r from-orange-50 to-orange-100 rounded-2xl p-8 border border-orange-200">
-          <div className="text-center">
-            <h3 className="text-2xl font-bold text-orange-800 mb-4">Stay Strong in Faith</h3>
-            <p className="text-orange-700 text-lg leading-relaxed">
-              "Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight." - Proverbs 3:5-6
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );
