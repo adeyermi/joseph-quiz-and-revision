@@ -1,11 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
-import { ArrowLeft, Home, Download, BookOpen } from 'lucide-react';
+import { ArrowLeft, Home, Download, BookOpen, Loader2 } from 'lucide-react';
+
+// Simple toast notification component
+const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) => (
+  <div
+    className={`fixed bottom-8 right-8 px-6 py-3 rounded-lg text-white font-medium shadow-lg transition-opacity duration-300 ${
+      type === 'success' ? 'bg-green-500' : 'bg-red-600'
+    }`}
+    role="alert"
+    onClick={onClose}
+  >
+    {message}
+  </div>
+);
 
 const MemoryVerseDocument = () => {
   const { getGreeting } = useUser();
   const navigate = useNavigate();
+  const [downloading, setDownloading] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const memoryVerses = [
     {
@@ -34,9 +49,34 @@ const MemoryVerseDocument = () => {
     }
   ];
 
-  const downloadDocument = () => {
-    console.log('Downloading Memory Verse document for', getGreeting());
-    alert('Memory Verse document download started!');
+  const downloadDocument = async () => {
+    try {
+      setDownloading(true);
+      const response = await fetch('https://server-wizg.onrender.com/api/single/MemoryVerse');
+
+      if (!response.ok) throw new Error('Failed to download document.');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      // Open PDF in a new tab
+      window.open(url, '_blank');
+
+      // Also trigger download for user convenience
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'MemoryVerse.pdf';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      setToast({ message: 'Document downloaded and opened successfully!', type: 'success' });
+    } catch (error) {
+      console.error('Download error:', error);
+      setToast({ message: 'Failed to download document. Please try again.', type: 'error' });
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -75,10 +115,22 @@ const MemoryVerseDocument = () => {
         <div className="text-center mb-8">
           <button
             onClick={downloadDocument}
-            className="bg-orange-primary hover:bg-orange-600 text-white py-3 px-6 rounded-xl font-medium transition-all duration-200 flex items-center space-x-2 mx-auto"
+            disabled={downloading}
+            className={`bg-orange-primary hover:bg-orange-600 text-white py-3 px-6 rounded-xl font-medium transition-all duration-200 flex items-center space-x-2 mx-auto ${
+              downloading ? 'opacity-70 cursor-not-allowed' : ''
+            }`}
           >
-            <Download className="w-5 h-5" />
-            <span>Download Document</span>
+            {downloading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Downloading...</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-5 h-5" />
+                <span>Download Document</span>
+              </>
+            )}
           </button>
         </div>
 
@@ -88,7 +140,6 @@ const MemoryVerseDocument = () => {
             <div key={index} className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-orange-100">
               <h2 className="text-2xl font-bold text-orange-800 mb-6">{verse.reference}</h2>
 
-              {/* KJV Version */}
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-700 mb-3">King James Version (KJV)</h3>
                 <p className="text-gray-600 italic leading-relaxed bg-orange-50 p-4 rounded-xl">
@@ -96,7 +147,6 @@ const MemoryVerseDocument = () => {
                 </p>
               </div>
 
-              {/* NIV Version */}
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-700 mb-3">New International Version (NIV)</h3>
                 <p className="text-gray-600 italic leading-relaxed bg-orange-50 p-4 rounded-xl">
@@ -104,7 +154,6 @@ const MemoryVerseDocument = () => {
                 </p>
               </div>
 
-              {/* Explanation */}
               <div className="bg-orange-100 border border-orange-300 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-orange-800 mb-3">Explanation</h3>
                 <div className="text-orange-700 leading-relaxed space-y-3">
@@ -129,15 +178,24 @@ const MemoryVerseDocument = () => {
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Understanding the expalantion</h4>
+              <h4 className="font-semibold mb-2">Understanding the explanation</h4>
               <ul className="space-y-1 text-sm">
-                <li>• Read Explantion under each Memory verse</li>
+                <li>• Read Explanation under each Memory verse</li>
                 <li>• Study the historical background if you can</li>
               </ul>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };
