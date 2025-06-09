@@ -30,43 +30,42 @@ const ExerciseQuiz = () => {
   };
 
   const handleSubmit = async (audioBlob: Blob) => {
-  setUploading(true);
-  setError(null);
-  setAudioUrl(null);
-  try {
-    const url = URL.createObjectURL(audioBlob);
-    setAudioUrl(url);
+    setUploading(true);
+    setError(null);
+    setAudioUrl(null);
+    try {
+      const url = URL.createObjectURL(audioBlob);
+      setAudioUrl(url);
 
-    const formData = new FormData();
-    formData.append('audio', audioBlob, 'exercise-recording.webm');
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'exercise-recording.webm');
 
-    const fullGreeting = getGreeting(); // e.g., "Brother Adeyemi"
-    const [title, ...rest] = fullGreeting.split(' ');
-    const actualName = rest.join(' ') || 'Anonymous';
+      const fullGreeting = getGreeting(); // e.g., "Brother Adeyemi"
+      const [title, ...rest] = fullGreeting.split(' ');
+      const actualName = rest.join(' ') || 'Anonymous';
 
-    formData.append('name', actualName);
-    formData.append('gender', title === 'Brother' ? 'male' : 'female');
-    formData.append('quizType', 'Exercise');
-    formData.append('era', currentEra || 'Unknown Era');
+      formData.append('name', actualName);
+      formData.append('gender', title === 'Brother' ? 'male' : 'female');
+      formData.append('quizType', 'Exercise');
+      formData.append('era', currentEra || 'Unknown Era');
 
-    const response = await fetch('https://server-wizg.onrender.com/api/upload-recording', {
-      method: 'POST',
-      body: formData,
-    });
+      const response = await fetch('https://server-wizg.onrender.com/api/upload-recording', {
+        method: 'POST',
+        body: formData,
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || 'Failed to upload audio. Please try again.');
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to upload audio. Please try again.');
+      }
+
+      setShowThankYou(true);
+    } catch (err: any) {
+      setError(err.message || 'An error occurred.');
+    } finally {
+      setUploading(false);
     }
-
-    setShowThankYou(true);
-  } catch (err: any) {
-    setError(err.message || 'An error occurred.');
-  } finally {
-    setUploading(false);
-  }
-};
-
+  };
 
   useEffect(() => {
     if (!audioRef.current) return;
@@ -78,20 +77,19 @@ const ExerciseQuiz = () => {
       setTimeLeft(Math.max(0, Math.floor(audioEl.duration - audioEl.currentTime)));
     };
 
-    audioEl.addEventListener('timeupdate', updateTimeLeft);
-    audioEl.addEventListener('ended', () => setTimeLeft(0));
-    audioEl.addEventListener('loadedmetadata', () => {
+    const handleLoadedMetadata = () => {
       setAudioDuration(Math.floor(audioEl.duration));
       setTimeLeft(Math.floor(audioEl.duration));
-    });
+    };
+
+    audioEl.addEventListener('timeupdate', updateTimeLeft);
+    audioEl.addEventListener('ended', () => setTimeLeft(0));
+    audioEl.addEventListener('loadedmetadata', handleLoadedMetadata);
 
     return () => {
       audioEl.removeEventListener('timeupdate', updateTimeLeft);
       audioEl.removeEventListener('ended', () => setTimeLeft(0));
-      audioEl.removeEventListener('loadedmetadata', () => {
-        setAudioDuration(Math.floor(audioEl.duration));
-        setTimeLeft(Math.floor(audioEl.duration));
-      });
+      audioEl.removeEventListener('loadedmetadata', handleLoadedMetadata);
     };
   }, [audioUrl]);
 
@@ -179,13 +177,21 @@ const ExerciseQuiz = () => {
               <div className="bg-orange-100 border border-orange-300 rounded-xl p-6">
                 <h4 className="font-bold text-orange-800 mb-3">Your Task:</h4>
                 <ul className="text-orange-700 space-y-2">
-                  <li>1. Explain this era based on what you remember.</li>
-                  <li>2. Do not read from any material.</li>
-                  <li>3. Keep it within 60 seconds.</li>
+                  <li>1. Describe this era based on what you remember.</li>
+                  <li>2. Give three names in that era.</li>
+                  <li>3. State the book(s) where the story is.</li>
+                  <li>4. Keep it within 60 seconds.</li>
                 </ul>
               </div>
 
-              <VoiceRecorder onSubmit={handleSubmit} timeLimit={60} uploading={uploading} />
+              <VoiceRecorder
+                timeLimit={60}
+                uploading={uploading}
+                onSubmit={(blob) => {
+                  // Fix for mobile: wait a bit before uploading to ensure audio is fully recorded
+                  setTimeout(() => handleSubmit(blob), 300);
+                }}
+              />
 
               {uploading && (
                 <div className="text-center mt-6">
