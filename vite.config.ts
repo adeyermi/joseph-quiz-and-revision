@@ -1,10 +1,14 @@
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  assetsInclude: ['**/*.wasm'], // allow importing WASM
   optimizeDeps: {
-    exclude: ['lucide-react'],
+     exclude: ['lucide-react','@ffmpeg/ffmpeg'],
   },
+  build: {
+    target: 'esnext', // needed for WebAssembly
+  }
 });

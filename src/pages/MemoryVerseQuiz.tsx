@@ -4,11 +4,6 @@ import { useUser } from '../contexts/UserContext';
 import VoiceRecorder from '../components/VoiceRecorder';
 import { ArrowLeft, BookOpen, Check } from 'lucide-react';
 
-// For mp3 conversion in-browser
-import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
-
-const ffmpeg = createFFmpeg({ log: false });
-
 const LoadingSpinner = () => (
   <div className="flex justify-center items-center mt-4">
     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-primary"></div>
@@ -24,14 +19,12 @@ const MemoryVerseQuiz = () => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Audio playback states
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [audioDuration, setAudioDuration] = useState<number>(0);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const verses = {
+ const verses = {
     KJV: [
       {
         reference: "Luke 24:26-27",
@@ -74,26 +67,7 @@ const MemoryVerseQuiz = () => {
     setSelectedVersion(version);
     const randomVerse = verses[version][Math.floor(Math.random() * verses[version].length)];
     setCurrentVerse(randomVerse);
-    setAudioUrl(null); // Reset audio on new verse
-  };
-
-  // Convert webm/ogg Blob to MP3 using ffmpeg.js
-  const convertToMp3 = async (audioBlob: Blob): Promise<Blob> => {
-    if (!ffmpeg.isLoaded()) {
-      await ffmpeg.load();
-    }
-
-    ffmpeg.FS('writeFile', 'input.webm', await fetchFile(audioBlob));
-
-    await ffmpeg.run('-i', 'input.webm', '-vn', '-ar', '44100', '-ac', '2', '-b:a', '192k', 'output.mp3');
-
-    const data = ffmpeg.FS('readFile', 'output.mp3');
-
-    // Cleanup FS to save memory
-    ffmpeg.FS('unlink', 'input.webm');
-    ffmpeg.FS('unlink', 'output.mp3');
-
-    return new Blob([data.buffer], { type: 'audio/mp3' });
+    setAudioUrl(null);
   };
 
   const handleSubmit = async (audioBlob: Blob) => {
@@ -101,16 +75,12 @@ const MemoryVerseQuiz = () => {
     setError(null);
     setAudioUrl(null);
     try {
-      // Convert to MP3
-      const mp3Blob = await convertToMp3(audioBlob);
-
-      // Create audio URL for playback
-      const url = URL.createObjectURL(mp3Blob);
+      // Use the original webm audioBlob directly
+      const url = URL.createObjectURL(audioBlob);
       setAudioUrl(url);
 
-      // Send mp3 to server
       const formData = new FormData();
-      formData.append('audio', mp3Blob, 'memory-verse.mp3');
+      formData.append('audio', audioBlob, 'memory-verse.webm'); // changed filename extension to .webm
       formData.append('name', getGreeting());
       formData.append('gender', getGreeting().includes('Brother') ? 'male' : 'female');
       formData.append('quizType', 'Memory Verse');
@@ -132,7 +102,6 @@ const MemoryVerseQuiz = () => {
     }
   };
 
-  // Audio playback time left handler
   useEffect(() => {
     if (!audioRef.current) return;
 
@@ -144,10 +113,7 @@ const MemoryVerseQuiz = () => {
     };
 
     audioEl.addEventListener('timeupdate', updateTimeLeft);
-
     audioEl.addEventListener('ended', () => setTimeLeft(0));
-
-    // Set duration on load
     audioEl.addEventListener('loadedmetadata', () => {
       setAudioDuration(Math.floor(audioEl.duration));
       setTimeLeft(Math.floor(audioEl.duration));
@@ -171,7 +137,6 @@ const MemoryVerseQuiz = () => {
     setAudioUrl(null);
   };
 
-  // Format time left as MM:SS
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
     const s = (seconds % 60).toString().padStart(2, '0');
@@ -191,16 +156,10 @@ const MemoryVerseQuiz = () => {
             You may retry to test proficiency on another verse.
           </p>
           <div className="space-y-3">
-            <button
-              onClick={retry}
-              className="w-full bg-orange-primary hover:bg-orange-600 text-white py-3 px-6 rounded-xl font-medium transition-all duration-200"
-            >
+            <button onClick={retry} className="w-full bg-orange-primary hover:bg-orange-600 text-white py-3 px-6 rounded-xl font-medium transition-all duration-200">
               Try Another Verse
             </button>
-            <button
-              onClick={() => navigate('/quiz')}
-              className="w-full bg-gray-500 hover:bg-gray-600 text-white py-3 px-6 rounded-xl font-medium transition-all duration-200"
-            >
+            <button onClick={() => navigate('/quiz')} className="w-full bg-gray-500 hover:bg-gray-600 text-white py-3 px-6 rounded-xl font-medium transition-all duration-200">
               Back to Quiz Menu
             </button>
           </div>
@@ -238,20 +197,13 @@ const MemoryVerseQuiz = () => {
 
         {!selectedVersion ? (
           <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-            <button
-              onClick={() => selectVersion('KJV')}
-              className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border-2 border-transparent hover:border-orange-200"
-            >
+            <button onClick={() => selectVersion('KJV')} className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border-2 border-transparent hover:border-orange-200">
               <div className="text-center">
                 <h3 className="text-2xl font-bold text-gray-800 mb-2">King James Version</h3>
                 <p className="text-gray-600">Traditional English translation</p>
               </div>
             </button>
-            
-            <button
-              onClick={() => selectVersion('NIV')}
-              className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border-2 border-transparent hover:border-orange-200"
-            >
+            <button onClick={() => selectVersion('NIV')} className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border-2 border-transparent hover:border-orange-200">
               <div className="text-center">
                 <h3 className="text-2xl font-bold text-gray-800 mb-2">New International Version</h3>
                 <p className="text-gray-600">Modern English translation</p>
@@ -262,33 +214,17 @@ const MemoryVerseQuiz = () => {
           <div className="space-y-8">
             <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-2xl p-8 border border-orange-200">
               <h3 className="text-xl font-bold text-orange-800 mb-4">{currentVerse.reference} ({selectedVersion})</h3>
-              <p className="text-gray-700 text-lg leading-relaxed mb-6">
-                "{currentVerse.text}"
-              </p>
+              <p className="text-gray-700 text-lg leading-relaxed mb-6">"{currentVerse.text}"</p>
               <div className="bg-orange-100 border border-orange-300 rounded-xl p-4">
                 <p className="text-orange-700 font-medium">
                   Please recite and briefly explain this verse without checking the material.
                 </p>
               </div>
+
+              <VoiceRecorder onSubmit={handleSubmit} timeLimit={60} uploading={uploading} />
+              {uploading && <LoadingSpinner />}
+    
             </div>
-
-            <VoiceRecorder onSubmit={handleSubmit} timeLimit={60} uploading={uploading} />
-
-            {uploading && <LoadingSpinner />}
-
-            {audioUrl && (
-              <div className="mt-6 text-center">
-                <audio
-                  ref={audioRef}
-                  controls
-                  src={audioUrl}
-                  className="mx-auto"
-                />
-                <p className="mt-2 text-gray-700">
-                  Time left: {formatTime(timeLeft)}
-                </p>
-              </div>
-            )}
           </div>
         )}
       </div>

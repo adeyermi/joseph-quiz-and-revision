@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Mic, Square, Play, Trash2, Send, Clock } from 'lucide-react';
 
+
 interface VoiceRecorderProps {
   onSubmit?: (audioBlob: Blob) => void;  // optional if you want to handle externally
   timeLimit?: number;
