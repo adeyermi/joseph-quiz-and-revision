@@ -1,8 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import VoiceRecorder from '../components/VoiceRecorder';
 import { ArrowLeft, BookOpen, Check } from 'lucide-react';
+
+// For mp3 conversion in-browser
+import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
+
+const ffmpeg = createFFmpeg({ log: false });
+
+const LoadingSpinner = () => (
+  <div className="flex justify-center items-center mt-4">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-primary"></div>
+  </div>
+);
 
 const MemoryVerseQuiz = () => {
   const { getGreeting } = useUser();
@@ -12,6 +23,13 @@ const MemoryVerseQuiz = () => {
   const [showThankYou, setShowThankYou] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Audio playback states
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioDuration, setAudioDuration] = useState<number>(0);
+  const [timeLeft, setTimeLeft] = useState<number>(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const verses = {
     KJV: [
@@ -56,18 +74,46 @@ const MemoryVerseQuiz = () => {
     setSelectedVersion(version);
     const randomVerse = verses[version][Math.floor(Math.random() * verses[version].length)];
     setCurrentVerse(randomVerse);
+    setAudioUrl(null); // Reset audio on new verse
+  };
+
+  // Convert webm/ogg Blob to MP3 using ffmpeg.js
+  const convertToMp3 = async (audioBlob: Blob): Promise<Blob> => {
+    if (!ffmpeg.isLoaded()) {
+      await ffmpeg.load();
+    }
+
+    ffmpeg.FS('writeFile', 'input.webm', await fetchFile(audioBlob));
+
+    await ffmpeg.run('-i', 'input.webm', '-vn', '-ar', '44100', '-ac', '2', '-b:a', '192k', 'output.mp3');
+
+    const data = ffmpeg.FS('readFile', 'output.mp3');
+
+    // Cleanup FS to save memory
+    ffmpeg.FS('unlink', 'input.webm');
+    ffmpeg.FS('unlink', 'output.mp3');
+
+    return new Blob([data.buffer], { type: 'audio/mp3' });
   };
 
   const handleSubmit = async (audioBlob: Blob) => {
     setUploading(true);
     setError(null);
+    setAudioUrl(null);
     try {
-      const formData = new FormData();
-          formData.append('audio', audioBlob, 'memory-verse.webm');
-          formData.append('name', getGreeting()); 
-          formData.append('gender', getGreeting().includes('Brother') ? 'male' : 'female');
-          formData.append('quizType', 'Memory Verse');
+      // Convert to MP3
+      const mp3Blob = await convertToMp3(audioBlob);
 
+      // Create audio URL for playback
+      const url = URL.createObjectURL(mp3Blob);
+      setAudioUrl(url);
+
+      // Send mp3 to server
+      const formData = new FormData();
+      formData.append('audio', mp3Blob, 'memory-verse.mp3');
+      formData.append('name', getGreeting());
+      formData.append('gender', getGreeting().includes('Brother') ? 'male' : 'female');
+      formData.append('quizType', 'Memory Verse');
 
       const response = await fetch('https://server-wizg.onrender.com/api/upload-recording', {
         method: 'POST',
@@ -86,11 +132,50 @@ const MemoryVerseQuiz = () => {
     }
   };
 
+  // Audio playback time left handler
+  useEffect(() => {
+    if (!audioRef.current) return;
+
+    const audioEl = audioRef.current;
+
+    const updateTimeLeft = () => {
+      if (!audioEl.duration || isNaN(audioEl.duration)) return;
+      setTimeLeft(Math.max(0, Math.floor(audioEl.duration - audioEl.currentTime)));
+    };
+
+    audioEl.addEventListener('timeupdate', updateTimeLeft);
+
+    audioEl.addEventListener('ended', () => setTimeLeft(0));
+
+    // Set duration on load
+    audioEl.addEventListener('loadedmetadata', () => {
+      setAudioDuration(Math.floor(audioEl.duration));
+      setTimeLeft(Math.floor(audioEl.duration));
+    });
+
+    return () => {
+      audioEl.removeEventListener('timeupdate', updateTimeLeft);
+      audioEl.removeEventListener('ended', () => setTimeLeft(0));
+      audioEl.removeEventListener('loadedmetadata', () => {
+        setAudioDuration(Math.floor(audioEl.duration));
+        setTimeLeft(Math.floor(audioEl.duration));
+      });
+    };
+  }, [audioUrl]);
+
   const retry = () => {
     setCurrentVerse(null);
     setSelectedVersion(null);
     setShowThankYou(false);
     setError(null);
+    setAudioUrl(null);
+  };
+
+  // Format time left as MM:SS
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
   };
 
   if (showThankYou) {
@@ -188,6 +273,22 @@ const MemoryVerseQuiz = () => {
             </div>
 
             <VoiceRecorder onSubmit={handleSubmit} timeLimit={60} uploading={uploading} />
+
+            {uploading && <LoadingSpinner />}
+
+            {audioUrl && (
+              <div className="mt-6 text-center">
+                <audio
+                  ref={audioRef}
+                  controls
+                  src={audioUrl}
+                  className="mx-auto"
+                />
+                <p className="mt-2 text-gray-700">
+                  Time left: {formatTime(timeLeft)}
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

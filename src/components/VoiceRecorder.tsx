@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Mic, Square, Play, Trash2, Send, Clock } from 'lucide-react';
 
 interface VoiceRecorderProps {
-  onSubmit?: (audioBlob: Blob) => void;
+  onSubmit?: (audioBlob: Blob) => void;  // optional if you want to handle externally
   timeLimit?: number;
 }
 
@@ -19,8 +19,9 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSubmit, timeLimit = 60 
 
   useEffect(() => {
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (audioRef.current) {
+        audioRef.current.pause();
       }
     };
   }, []);
@@ -37,7 +38,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSubmit, timeLimit = 60 
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/webm' });
+        const blob = new Blob(chunks, { type: 'audio/wav' });
         setAudioBlob(blob);
         setHasRecording(true);
         stream.getTracks().forEach(track => track.stop());
@@ -56,7 +57,6 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSubmit, timeLimit = 60 
           return prev - 1;
         });
       }, 1000);
-
     } catch (error) {
       console.error('Error accessing microphone:', error);
       alert('Could not access microphone. Please check permissions.');
@@ -100,33 +100,33 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSubmit, timeLimit = 60 
   const submitRecording = async () => {
     if (!audioBlob) return;
 
+    // If external handler provided, use it
+    if (onSubmit) {
+      onSubmit(audioBlob);
+      return;
+    }
+
+    // Otherwise, submit to your backend API here
     const formData = new FormData();
-    formData.append('audio', audioBlob, 'memory-verse.webm');
-    formData.append('greeting', 'Brother Adeyemi');
-    formData.append('type', 'memory_verse');
+    formData.append('audio', audioBlob, 'recording.wav'); // key must be 'audio'
 
     try {
       const response = await fetch('https://server-wizg.onrender.com/api/upload-recording', {
         method: 'POST',
         body: formData,
       });
+      const data = await response.json();
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Upload failed');
+      if (data.success) {
+        alert('Upload successful!');
+        // Reset after upload
+        deleteRecording();
+      } else {
+        alert('Upload failed: ' + data.message);
       }
-
-      const result = await response.json();
-      console.log('Upload successful:', result.message);
-      alert('Upload successful!');
     } catch (error) {
       console.error('Upload error:', error);
-      alert(`Failed to upload audio: ${(error as Error).message}`);
-    }
-
-    // Optional: Trigger local onSubmit callback
-    if (onSubmit) {
-      onSubmit(audioBlob);
+      alert('Failed to upload audio');
     }
   };
 
@@ -136,6 +136,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSubmit, timeLimit = 60 
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Auto-submit when timer reaches 0
   useEffect(() => {
     if (timeLeft === 0 && hasRecording && audioBlob) {
       setTimeout(() => {
@@ -147,11 +148,13 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSubmit, timeLimit = 60 
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-orange-100">
       <div className="text-center space-y-6">
+        {/* Timer */}
         <div className={`text-6xl font-bold ${timeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-orange-primary'}`}>
           <Clock className="w-8 h-8 inline-block mr-2" />
           {formatTime(timeLeft)}
         </div>
 
+        {/* Recording Status */}
         <div className="space-y-4">
           {isRecording && (
             <div className="flex items-center justify-center space-x-2 text-red-500">
@@ -160,6 +163,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSubmit, timeLimit = 60 
             </div>
           )}
 
+          {/* Controls */}
           {!hasRecording ? (
             <button
               onClick={isRecording ? stopRecording : startRecording}
@@ -201,10 +205,11 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSubmit, timeLimit = 60 
           )}
         </div>
 
+        {/* Instructions */}
         <p className="text-gray-600 text-sm">
           {!hasRecording
-            ? "Click the microphone to start recording your answer"
-            : "Play to review, delete to re-record, or submit your answer"}
+            ? 'Click the microphone to start recording your answer'
+            : 'Play to review, delete to re-record, or submit your answer'}
         </p>
 
         {timeLeft === 0 && hasRecording && (
