@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Mic, Square, Play, Trash2, Send, Clock } from 'lucide-react';
 
-
 interface VoiceRecorderProps {
-  onSubmit?: (audioBlob: Blob) => void;  // optional if you want to handle externally
+  onSubmit?: (audioBlob: Blob) => void;
   timeLimit?: number;
 }
 
@@ -17,29 +16,43 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSubmit, timeLimit = 60 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
+    // Cleanup on unmount
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
+      if (audioRef.current) audioRef.current.pause();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
+
+  useEffect(() => {
+    // Handle page/tab becoming inactive on mobile
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+  }, [isRecording]);
+
+  const handleVisibilityChange = () => {
+    if (document.hidden && isRecording) {
+      stopRecording(); // force stop recording if user switches apps
+    }
+  };
 
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
 
-      const chunks: BlobPart[] = [];
       mediaRecorder.ondataavailable = (event) => {
-        chunks.push(event.data);
+        chunksRef.current.push(event.data);
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/wav' });
+        const blob = new Blob(chunksRef.current, { type: 'audio/wav' });
         setAudioBlob(blob);
         setHasRecording(true);
         stream.getTracks().forEach(track => track.stop());
@@ -59,19 +72,19 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSubmit, timeLimit = 60 
         });
       }, 1000);
     } catch (error) {
-      console.error('Error accessing microphone:', error);
-      alert('Could not access microphone. Please check permissions.');
+      console.error('Microphone access error:', error);
+      alert('Could not access your microphone. Please check browser permissions.');
     }
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
     }
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    setIsRecording(false);
   };
 
   const playRecording = () => {
@@ -101,15 +114,13 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSubmit, timeLimit = 60 
   const submitRecording = async () => {
     if (!audioBlob) return;
 
-    // If external handler provided, use it
     if (onSubmit) {
       onSubmit(audioBlob);
       return;
     }
 
-    // Otherwise, submit to your backend API here
     const formData = new FormData();
-    formData.append('audio', audioBlob, 'recording.wav'); // key must be 'audio'
+    formData.append('audio', audioBlob, 'recording.wav');
 
     try {
       const response = await fetch('https://server-wizg.onrender.com/api/upload-recording', {
@@ -120,7 +131,6 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSubmit, timeLimit = 60 
 
       if (data.success) {
         alert('Upload successful!');
-        // Reset after upload
         deleteRecording();
       } else {
         alert('Upload failed: ' + data.message);
@@ -137,25 +147,22 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSubmit, timeLimit = 60 
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Auto-submit when timer reaches 0
   useEffect(() => {
     if (timeLeft === 0 && hasRecording && audioBlob) {
       setTimeout(() => {
         submitRecording();
-      }, 1000);
+      }, 500); // slightly reduced timeout for mobile responsiveness
     }
   }, [timeLeft, hasRecording, audioBlob]);
 
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-orange-100">
       <div className="text-center space-y-6">
-        {/* Timer */}
         <div className={`text-6xl font-bold ${timeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-orange-primary'}`}>
           <Clock className="w-8 h-8 inline-block mr-2" />
           {formatTime(timeLeft)}
         </div>
 
-        {/* Recording Status */}
         <div className="space-y-4">
           {isRecording && (
             <div className="flex items-center justify-center space-x-2 text-red-500">
@@ -164,7 +171,6 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSubmit, timeLimit = 60 
             </div>
           )}
 
-          {/* Controls */}
           {!hasRecording ? (
             <button
               onClick={isRecording ? stopRecording : startRecording}
@@ -206,7 +212,6 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSubmit, timeLimit = 60 
           )}
         </div>
 
-        {/* Instructions */}
         <p className="text-gray-600 text-sm">
           {!hasRecording
             ? 'Click the microphone to start recording your answer'
