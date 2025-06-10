@@ -93,6 +93,18 @@ const PastQuestionsDocument = () => {
               <div className="bg-cream rounded-full p-6 w-20 h-20 mx-auto mb-6 flex items-center justify-center border-2 border-orange-primary">
                 <FileQuestion className="w-10 h-10 text-orange-primary" />
               </div>
+
+            {/* Mobile Instructions */}
+            {isMobile && (
+              <div className="bg-orange-50 rounded-lg p-4 mt-6 border border-orange-200">
+                <h4 className="font-semibold text-orange-800 mb-2">📱 Mobile Reading Tips</h4>
+                <div className="text-orange-700 text-sm space-y-1">
+                  <p>• Scroll within the PDF area to navigate through pages</p>
+                  <p>• Pinch to zoom in/out for better readability</p>
+                  <p>• If scrolling doesn't work, try downloading the PDF</p>
+                </div>
+              </div>
+            )}
               <h1 className="text-3xl font-bold text-gray-800 mb-2">Week {selectedWeek} Past Questions</h1>
               <h2 className="text-xl text-orange-600 font-semibold mb-4">{weekTitles[selectedWeek]}</h2>
               <p className="text-gray-600">Study materials for {getGreeting()}</p>
@@ -112,28 +124,77 @@ const PastQuestionsDocument = () => {
               {loading ? (
                 <div className="text-center text-orange-700 font-semibold">Loading PDF...</div>
               ) : (
-                <div className="w-full rounded-xl border-2 border-orange-300 overflow-hidden">
-                  <div 
-                    className="w-full h-[80vh] overflow-auto bg-white"
-                    style={{
-                      WebkitOverflowScrolling: 'touch',
-                      overflowY: 'scroll',
-                      overflowX: 'auto',
-                      touchAction: 'auto'
-                    }}
-                  >
-                    <iframe
-                      src={`${pdfLinks[selectedWeek]}#toolbar=1&navpanes=1&scrollbar=1&view=FitH`}
-                      className="w-full h-full min-h-[600px]"
+                <div className="w-full rounded-xl border-2 border-orange-300 bg-white">
+                  {isMobile ? (
+                    // Mobile-optimized PDF viewer with object tag
+                    <div className="relative w-full">
+                      <div 
+                        className="w-full overflow-auto"
+                        style={{
+                          height: '70vh',
+                          maxHeight: '500px',
+                          WebkitOverflowScrolling: 'touch',
+                          overflowY: 'scroll',
+                          overflowX: 'hidden',
+                          touchAction: 'pan-y pan-x'
+                        }}
+                      >
+                        <object
+                          data={`${pdfLinks[selectedWeek]}#view=FitH&toolbar=1`}
+                          type="application/pdf"
+                          className="w-full h-full min-h-[400px]"
+                          style={{
+                            display: 'block',
+                            width: '100%',
+                            height: '100%'
+                          }}
+                        >
+                          <div className="p-6 text-center bg-gray-50 min-h-[300px] flex flex-col justify-center">
+                            <FileQuestion className="w-12 h-12 text-orange-primary mx-auto mb-4" />
+                            <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                              PDF Preview Not Available
+                            </h3>
+                            <p className="text-gray-600 mb-4">
+                              Your browser doesn't support PDF preview. Please download the file to view it.
+                            </p>
+                            <button
+                              onClick={() => handleDownload(selectedWeek)}
+                              className="bg-orange-primary hover:bg-orange-600 text-white py-2 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 mx-auto"
+                            >
+                              <Download className="w-4 h-4" />
+                              <span>Download PDF</span>
+                            </button>
+                          </div>
+                        </object>
+                      </div>
+                      
+                      {/* Mobile scroll hint */}
+                      <div className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                        Scroll to read
+                      </div>
+                    </div>
+                  ) : (
+                    // Desktop PDF viewer
+                    <div 
+                      className="w-full overflow-auto"
                       style={{
-                        border: 'none',
-                        display: 'block'
+                        height: '80vh',
+                        WebkitOverflowScrolling: 'touch'
                       }}
-                      title={`Week ${selectedWeek} Past Questions`}
-                      loading="lazy"
-                      allowFullScreen
-                    />
-                  </div>
+                    >
+                      <iframe
+                        src={`${pdfLinks[selectedWeek]}#toolbar=1&navpanes=1&scrollbar=1&view=FitH`}
+                        className="w-full h-full min-h-[600px]"
+                        style={{
+                          border: 'none',
+                          display: 'block'
+                        }}
+                        title={`Week ${selectedWeek} Past Questions`}
+                        loading="lazy"
+                        allowFullScreen
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
