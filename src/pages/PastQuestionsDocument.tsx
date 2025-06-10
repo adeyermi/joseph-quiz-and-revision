@@ -91,17 +91,6 @@ const PastQuestionsDocument = () => {
               <div className="bg-cream rounded-full p-6 w-20 h-20 mx-auto mb-6 flex items-center justify-center border-2 border-orange-primary">
                 <FileQuestion className="w-10 h-10 text-orange-primary" />
               </div>
-
-            {/* PDF Viewer Instructions */}
-            <div className="bg-green-50 rounded-lg p-4 mt-6 border border-green-200">
-              <h4 className="font-semibold text-green-800 mb-2">📖 PDF Viewer Features</h4>
-              <div className="text-green-700 text-sm space-y-1">
-                <p>• Use the toolbar at the top to navigate pages</p>
-                <p>• Zoom in/out using the + and - buttons</p>
-                <p>• {isMobile ? 'Swipe or use page controls to navigate' : 'Scroll or use page controls to navigate'}</p>
-                <p>• Full-screen mode available for better reading</p>
-              </div>
-            </div>
               <h1 className="text-3xl font-bold text-gray-800 mb-2">Week {selectedWeek} Past Questions</h1>
               <h2 className="text-xl text-orange-600 font-semibold mb-4">{weekTitles[selectedWeek]}</h2>
               <p className="text-gray-600">Study materials for {getGreeting()}</p>
@@ -123,7 +112,7 @@ const PastQuestionsDocument = () => {
               ) : (
                 <div className="w-full rounded-xl border-2 border-orange-300 bg-white overflow-hidden">
                   <div 
-                    className="w-full"
+                   className="w-full"
                     style={{
                       height: '90vh',
                       minHeight: '500px'
