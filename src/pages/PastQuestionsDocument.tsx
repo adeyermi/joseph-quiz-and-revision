@@ -21,14 +21,14 @@ const PastQuestionsDocument = () => {
   };
 
   const weekTitles: Record<number, string> = {
-    1: "Creation and Early History",
-    2: "The Patriarchs",
-    3: "Joseph and Early Israel",
-    4: "Moses and the Exodus",
-    5: "Law and Wilderness",
-    6: "Conquest and Judges",
-    7: "The United Kingdom",
-    8: "Divided Kingdom and Exile"
+    1: "JOHN 3 & 4",
+    2: "JOHN 5: 1-47",
+    3: "LUKE",
+    4: "MATHEW 5",
+    5: "MATHEW 6",
+    6: "MATHEW 7",
+    7: "MATHEW 8 & 9",
+    8: "LUKE 6: 1-19"
   };
 
   const handleWeekSelect = async (week: number) => {
