@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
-import { ArrowLeft, Home, Download, FileQuestion, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Home, Download, FileQuestion } from 'lucide-react';
 
 const PastQuestionsDocument = () => {
   const { getGreeting, name, gender } = useUser();
@@ -31,6 +31,7 @@ const PastQuestionsDocument = () => {
     8: "LUKE 6: 1-19"
   };
 
+
   const handleWeekSelect = async (week: number) => {
     setSelectedWeek(week);
     setLoading(true);
@@ -58,10 +59,6 @@ const PastQuestionsDocument = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  const handleOpenInNewTab = (week: number) => {
-    window.open(pdfLinks[week], '_blank');
   };
 
   // Check if device is likely mobile
@@ -101,24 +98,14 @@ const PastQuestionsDocument = () => {
               <p className="text-gray-600">Study materials for {getGreeting()}</p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+            <div className="flex justify-center mb-8">
               <button
                 onClick={() => handleDownload(selectedWeek)}
-                className="bg-orange-primary hover:bg-orange-600 text-white py-3 px-6 rounded-xl font-medium transition-all duration-200 flex items-center justify-center space-x-2"
+                className="bg-orange-primary hover:bg-orange-600 text-white py-3 px-6 rounded-xl font-medium transition-all duration-200 flex items-center space-x-2"
               >
                 <Download className="w-5 h-5" />
                 <span>Download PDF</span>
               </button>
-              
-              {isMobile && (
-                <button
-                  onClick={() => handleOpenInNewTab(selectedWeek)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-xl font-medium transition-all duration-200 flex items-center justify-center space-x-2"
-                >
-                  <ExternalLink className="w-5 h-5" />
-                  <span>Open in New Tab</span>
-                </button>
-              )}
             </div>
 
             <div className="w-full">
@@ -126,72 +113,32 @@ const PastQuestionsDocument = () => {
                 <div className="text-center text-orange-700 font-semibold">Loading PDF...</div>
               ) : (
                 <div className="w-full rounded-xl border-2 border-orange-300 overflow-hidden">
-                  {isMobile ? (
-                    // Mobile-optimized PDF viewer
-                    <div className="bg-white p-4 text-center min-h-[400px] flex flex-col justify-center">
-                      <FileQuestion className="w-16 h-16 text-orange-primary mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                        Mobile PDF Viewer
-                      </h3>
-                      <p className="text-gray-600 mb-6">
-                        For the best mobile viewing experience, please use one of the options below:
-                      </p>
-                      <div className="space-y-3">
-                        <button
-                          onClick={() => handleOpenInNewTab(selectedWeek)}
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2"
-                        >
-                          <ExternalLink className="w-5 h-5" />
-                          <span>Open PDF in New Tab</span>
-                        </button>
-                        <button
-                          onClick={() => handleDownload(selectedWeek)}
-                          className="w-full bg-orange-primary hover:bg-orange-600 text-white py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2"
-                        >
-                          <Download className="w-5 h-5" />
-                          <span>Download PDF</span>
-                        </button>
-                      </div>
-                      <p className="text-sm text-gray-500 mt-4">
-                        Opening in a new tab provides better scrolling and zoom functionality on mobile devices.
-                      </p>
-                    </div>
-                  ) : (
-                    // Desktop PDF viewer with improved scrolling
-                    <div 
-                      className="w-full h-[80vh] overflow-auto"
+                  <div 
+                    className="w-full h-[80vh] overflow-auto bg-white"
+                    style={{
+                      WebkitOverflowScrolling: 'touch',
+                      overflowY: 'scroll',
+                      overflowX: 'auto',
+                      touchAction: 'auto'
+                    }}
+                  >
+                    <iframe
+                      src={`${pdfLinks[selectedWeek]}#toolbar=1&navpanes=1&scrollbar=1&view=FitH`}
+                      className="w-full h-full min-h-[600px]"
                       style={{
-                        WebkitOverflowScrolling: 'touch',
-                        overflowY: 'scroll',
-                        overflowX: 'auto'
+                        border: 'none',
+                        display: 'block'
                       }}
-                    >
-                      <iframe
-                        src={`${pdfLinks[selectedWeek]}#toolbar=1&navpanes=1&scrollbar=1`}
-                        className="w-full h-full min-h-[600px]"
-                        style={{
-                          border: 'none',
-                          display: 'block'
-                        }}
-                        title={`Week ${selectedWeek} Past Questions`}
-                        loading="lazy"
-                      />
-                    </div>
-                  )}
+                      title={`Week ${selectedWeek} Past Questions`}
+                      loading="lazy"
+                      allowFullScreen
+                    />
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* Mobile Instructions */}
-            {isMobile && (
-              <div className="bg-blue-50 rounded-lg p-4 mt-6 border border-blue-200">
-                <h4 className="font-semibold text-blue-800 mb-2">📱 Mobile Tip</h4>
-                <p className="text-blue-700 text-sm">
-                  For better PDF reading experience on mobile, tap "Open in New Tab" to view the PDF 
-                  in your browser's built-in PDF viewer with full scrolling and zoom capabilities.
-                </p>
-              </div>
-            )}
+
           </div>
         ) : (
           <>
