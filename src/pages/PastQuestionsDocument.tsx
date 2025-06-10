@@ -20,7 +20,7 @@ const PastQuestionsDocument = () => {
     8: encodeURI("https://server-wizg.onrender.com/api/pastquestions/Week 8.pdf")
   };
 
-  const weekTitles: Record<number, string> = {
+   const weekTitles: Record<number, string> = {
     1: "JOHN 3 & 4",
     2: "JOHN 5: 1-47",
     3: "LUKE",
@@ -30,7 +30,6 @@ const PastQuestionsDocument = () => {
     7: "MATHEW 8 & 9",
     8: "LUKE 6: 1-19"
   };
-
   const handleWeekSelect = async (week: number) => {
     setSelectedWeek(week);
     setLoading(true);
@@ -126,8 +125,8 @@ const PastQuestionsDocument = () => {
                   <div 
                     className="w-full"
                     style={{
-                      height: isMobile ? '70vh' : '80vh',
-                      minHeight: '400px'
+                      height: '90vh',
+                      minHeight: '500px'
                     }}
                   >
                     <iframe
