@@ -38,7 +38,12 @@ const PastQuestionsDocument = () => {
       await fetch("https://server-wizg.onrender.com/api/send-pdf-activity", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, gender, category: "Past Questions", week }),
+        body: JSON.stringify({
+          name,
+          gender,
+          category: "Past Questions",
+          week
+        }),
       });
     } catch (error) {
       console.error("Failed to send activity email:", error);
@@ -56,7 +61,7 @@ const PastQuestionsDocument = () => {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-6 bg-cream">
+    <div className="min-h-screen p-6 bg-cream">
       <div className="max-w-5xl mx-auto">
         {/* Navigation */}
         <div className="flex justify-between items-center mb-8">
@@ -67,6 +72,7 @@ const PastQuestionsDocument = () => {
             <ArrowLeft className="w-5 h-5" />
             <span>{selectedWeek ? 'Back to Week Selection' : 'Previous Page'}</span>
           </button>
+
           <button
             onClick={() => navigate('/home')}
             className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors duration-200"
@@ -98,16 +104,17 @@ const PastQuestionsDocument = () => {
               </button>
             </div>
 
-            {/* PDF Viewer Container */}
-            <div className="w-full max-h-[85vh] overflow-y-auto rounded-xl border-2 border-orange-300">
+            <div className="w-full">
               {loading ? (
-                <div className="text-center text-orange-700 font-semibold py-6">Loading PDF...</div>
+                <div className="text-center text-orange-700 font-semibold">Loading PDF...</div>
               ) : (
-                <iframe
-                  src={pdfLinks[selectedWeek]}
-                  title={`Week ${selectedWeek} Past Questions`}
-                  className="w-full h-[85vh] min-h-[500px]"
-                ></iframe>
+             <div className="w-full h-[80vh] overflow-y-auto rounded-xl border-2 border-orange-300">
+                  <embed
+                    src={pdfLinks[selectedWeek]}
+                    type="application/pdf"
+                    className="w-full h-full"
+                  />
+                </div>
               )}
             </div>
           </div>
