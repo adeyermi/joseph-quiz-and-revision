@@ -187,8 +187,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSubmit, timeLimit = 60 
         <div
           className={`text-6xl font-bold ${
             timeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-orange-primary'
-          }`}
-        >
+          }`}>
           <Clock className="w-8 h-8 inline-block mr-2" />
           {formatTime(timeLeft)}
         </div>

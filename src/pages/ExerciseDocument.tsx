@@ -19,7 +19,7 @@ const ExerciseDocument = () => {
     },
     {
       name: "The Era of the Patriarchs",
-      description: "- The word Patriarch means founding fathers. The Era of Patriarchs therefore refers to the era of the founding fathers of the Israelites.",
+      description: "The word Patriarch means founding fathers. The Era of Patriarchs therefore refers to the era of the founding fathers of the Israelites.",
       keyFigures: ["Abraham", "Isaac", "Jacob", "Reuben", "Simeon", "Levi", "Joseph", "Benjamin"],
       books: ["Genesis 12 -50"]
     },
@@ -31,7 +31,7 @@ const ExerciseDocument = () => {
     },
     {
       name: "The Conquest Era",
-      description: "- God promised Abraham to give some land to his descendants. After the Israelites left Egypt and spent years in the wilderness, by God’s help, they began to fight for the land which God had promised them. Moses fought for some of the land before his death, then, Joshua continued with the rest.",
+      description: "God promised Abraham to give some land to his descendants. After the Israelites left Egypt and spent years in the wilderness, by God’s help, they began to fight for the land which God had promised them. Moses fought for some of the land before his death, then, Joshua continued with the rest.",
       keyFigures: ["Joshua", "Caleb", "Rahab" ],
       books: ["Joshua"],
 
