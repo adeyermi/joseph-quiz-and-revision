@@ -104,15 +104,17 @@ const PastQuestionsDocument = () => {
               </button>
             </div>
 
-            <div className="w-full h-[93vh]">
+            <div className="w-full">
               {loading ? (
                 <div className="text-center text-orange-700 font-semibold">Loading PDF...</div>
               ) : (
-                <iframe
-                  src={pdfLinks[selectedWeek]}
-                  title={`Week ${selectedWeek} Past Questions`}
-                  className="w-full h-full border-2 border-orange-300 rounded-xl"
-                ></iframe>
+                <div className="w-full h-[80vh] overflow-hidden rounded-xl border-2 border-orange-300">
+                  <embed
+                    src={pdfLinks[selectedWeek]}
+                    type="application/pdf"
+                    className="w-full h-full"
+                  />
+                </div>
               )}
             </div>
           </div>
