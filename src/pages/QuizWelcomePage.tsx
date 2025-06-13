@@ -21,14 +21,14 @@ const QuizWelcomePage = () => {
       description: 'Describe biblical eras, name key figures, and identify the books where their stories are found',
       icon: Dumbbell,
       borderColor: 'hover:border-orange-200'
-    },
-    {
-      id: 'past-questions',
-      title: 'Past Questions',
-      description: 'Answer random questions from previous weeks\' materials and test your comprehensive knowledge',
-      icon: FileQuestion,
-      borderColor: 'hover:border-orange-200'
     }
+    // {
+    //   id: 'past-questions',
+    //   title: 'Past Questions',
+    //   description: 'Answer random questions from previous weeks\' materials and test your comprehensive knowledge',
+    //   icon: FileQuestion,
+    //   borderColor: 'hover:border-orange-200'
+    // }
   ];
 
   return (
